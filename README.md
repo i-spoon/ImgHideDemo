@@ -1,2 +1,3 @@
 # ImgHideDemo
 ImgHideDemo
+主要针对目前比较常见的数字水印算法进行相应的实现，其中MhackShow为相应的代码运行主文件
