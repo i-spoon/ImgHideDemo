@@ -13,6 +13,10 @@ from hackImg import tranHack,shapeHack,SaltyHack,GaussHack,JpegHack,cutHack,mse,
 from HideImage import Paper_Encoding,Paper_Decoding
 from PatchWorkDCT import Qlogo,Tlogo
 import cv2
+from Bit_FFT import encode4bit,decode4bit,encodeFFT,decodeFFT  
+from DCT_DWT import encodeDWT,decodeDWT,encodeDCT,decodeDCT
+import numpy as np
+
 class DealWindows(QWidget):
     
     def PatchImage(self):
@@ -43,6 +47,60 @@ class DealWindows(QWidget):
         self.lineEdit1.setText(str(mse(self.gray,self.NewImg)))
         self.lineEdit2.setText(str(SNR(self.NewImg,self.gray)))
         self.lineEdit3.setText(str(PSNR(self.gray,self.NewImg)))
+        
+    def QBitImage(self):
+        self.flag=3
+        img=cv2.imread(self.Zjpg)
+        pimg=cv2.imread(self.Ljpg)
+        outImg=encode4bit(self.Zjpg,self.Ljpg)
+        self.HackImg=outImg.copy()
+        self.NewImg=outImg.copy()
+        jpg = QtGui.QPixmap("./images/result.jpg").scaled(self.label1.width(), self.label1.height())
+        self.label1.setPixmap(jpg)
+        self.lineEdit1.setText(str(mse(img,self.NewImg)))
+        self.lineEdit2.setText(str(SNR(self.NewImg,img)))
+        self.lineEdit3.setText(str(PSNR(img,self.NewImg)))
+    
+    def FFTImage(self):
+        self.flag=4
+        img=cv2.imread(self.Zjpg)
+        pimg=cv2.imread(self.Ljpg)
+        self.initImg=img.copy()
+        encodeFFT(self.Zjpg, self.Ljpg)
+        outImg=cv2.imread("./images/result.jpg")
+        self.HackImg=outImg.copy()
+        self.NewImg=outImg.copy()
+        jpg = QtGui.QPixmap("./images/result.jpg").scaled(self.label1.width(), self.label1.height())
+        self.label1.setPixmap(jpg)
+        self.lineEdit1.setText(str(mse(img,self.NewImg)))
+        self.lineEdit2.setText(str(SNR(self.NewImg,img)))
+        self.lineEdit3.setText(str(PSNR(img,self.NewImg)))
+    
+    def DWTImage(self):
+        self.flag=5
+        outImg,self.CA=encodeDWT(self.Zjpg, self.Ljpg)
+        self.initImg=cv2.imread(self.Zjpg)
+        self.HackImg=outImg.copy()
+        self.NewImg=outImg.copy()
+        jpg = QtGui.QPixmap("./images/result.jpg").scaled(self.label1.width(), self.label1.height())
+        self.label1.setPixmap(jpg)
+        self.lineEdit1.setText(str(mse(self.initImg,self.NewImg)))
+        self.lineEdit2.setText(str(SNR(self.NewImg,self.initImg)))
+        self.lineEdit3.setText(str(PSNR(self.initImg,self.NewImg)))
+    
+    def DCTImage(self):
+        self.flag=6
+        img=encodeDCT(self.Zjpg, self.Ljpg, self.d1, self.d2, 6)
+        self.initImg=cv2.imread(self.Zjpg)
+        self.HackImg=img.copy()
+        self.NewImg=img.copy()
+        jpg = QtGui.QPixmap("./images/result.jpg").scaled(self.label1.width(), self.label1.height())
+        self.label1.setPixmap(jpg)
+        self.gray=self.tranGrey()
+        self.lineEdit1.setText(str(mse(self.gray,self.NewImg)))
+        self.lineEdit2.setText(str(SNR(self.NewImg,self.gray)))
+        self.lineEdit3.setText(str(PSNR(self.gray,self.NewImg)))
+        
     def tranGrey(self):
         img = cv2.imread(self.Zjpg)
         img=img.copy()
@@ -115,6 +173,9 @@ class DealWindows(QWidget):
             jpg = QtGui.QPixmap("./images/hack.jpg").scaled(self.label1.width(), self.label1.height())
             self.label1.setPixmap(jpg)
             
+
+            
+        
     def THackImg(self):
         if self.NewImg is not None:
             if self.flag==1:
@@ -129,10 +190,35 @@ class DealWindows(QWidget):
                 cv2.imshow("Logo.png",new_img)
                 cv2.waitKey(0)
                 cv2.imwrite("./images/Logo.jpg",img)
+            elif self.flag==3:
+                img=decode4bit(self.HackImg)
+                new_img=cv2.resize(img, (400,400), interpolation=cv2.INTER_AREA)
+                cv2.imshow("Logo.png",new_img)
+                cv2.waitKey(0)
+                cv2.imwrite("./images/Logo.jpg",img)
+            elif self.flag==4:
+                img=decodeFFT(self.HackImg, self.initImg)
+                new_img=cv2.resize(img, (400,400), interpolation=cv2.INTER_AREA)
+                cv2.imshow("Logo.png",new_img)
+                cv2.waitKey(0)
+                cv2.imwrite("./images/Logo.jpg",img)
+            elif self.flag==5:
+                img=decodeDWT(self.HackImg,self.CA)
+                new_img=cv2.resize(img,(400,400),interpolation=cv2.INTER_AREA)
+                cv2.imshow("Logo.png",new_img)
+                cv2.waitKey(0)
+                cv2.imwrite("./images/Logo.jpg")
+            elif self.flag==6:
+                img=decodeDCT(self.HackImg, self.d1, self.d2, 64)
+                new_img=cv2.resize(img,(400,400),interpolation=cv2.INTER_AREA)
+                cv2.imshow("Logo.png",new_img)
+                cv2.waitKey(0)
+                cv2.imwrite("./images/Logo.jpg",img)
     
     
     def __init__(self,Zjpg,Ljpg):
         self.flag=0
+        self.CA=0
         super().__init__()
         self.setWindowTitle("常见的信息隐藏方法")
         self.resize(750, 550)
@@ -145,6 +231,8 @@ class DealWindows(QWidget):
         self.Zjpg=Zjpg
         self.Ljpg=Ljpg
         self.NewImg=""
+        self.d1=np.array([[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]])
+        self.d2=np.array([[1,1,1,1],[1,1,1,1],[-1,-1,-1,-1],[-1,-1,-1,-1]])
         
         label2=QLabel(self)
         label2.move(480,0)
@@ -153,21 +241,25 @@ class DealWindows(QWidget):
         btn1.setText("LSB")
         btn1.setFixedSize(100,40)
         btn1.move(480,20)
-
+        btn1.clicked.connect(self.QBitImage)
+        
         btn2=QPushButton(self)
         btn2.setText("DCT")
         btn2.setFixedSize(100,40)
         btn2.move(590,20)
+        btn2.clicked.connect(self.DCTImage)
         
         btn3=QPushButton(self)
-        btn3.setText("DFT")
+        btn3.setText("FFT")
         btn3.setFixedSize(100,40)
         btn3.move(480,65)
+        btn3.clicked.connect(self.FFTImage)
         
         btn4=QPushButton(self)
-        btn4.setText("DWT")
+        btn4.setText("PatchWork")
         btn4.setFixedSize(100,40)
         btn4.move(590,65)
+        btn4.clicked.connect(self.PatchImage)
         
         btn5=QPushButton(self)
         btn5.setText("新型方法")
@@ -177,11 +269,11 @@ class DealWindows(QWidget):
         label3=QLabel(self)
         label3.move(480,155)
         
-        btnh=QPushButton(self)
-        btnh.setText("PatchWork")
-        btnh.move(590,110)
-        btnh.setFixedSize(100,40)
-        btnh.clicked.connect(self.PatchImage)
+        # btnh=QPushButton(self)
+        # btnh.setText("PatchWork")
+        # btnh.move(590,110)
+        # btnh.setFixedSize(100,40)
+        # btnh.clicked.connect(self.PatchImage)
         
         label3.setText("常见的算法攻击")
         

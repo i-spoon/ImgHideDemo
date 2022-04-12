@@ -162,7 +162,7 @@ def Paper_Encoding(filePathP,filePathWater,isPaper=True):
     #         print("奇异值",sigma.shape)
     #         print(sigma)
 
-def Paper_Decoding(image,p=[0.5,0.25,0.25]):
+def Paper_Decoding(image,p=[0.3163829,0.14790612,0.56512195]):
 
     imgDwtList = haar_img(image, 2)
     useList = [imgDwtList[4], imgDwtList[5], imgDwtList[6]]
